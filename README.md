@@ -23,8 +23,9 @@ _________________________________________________________________
 + testing phase: 
     ```
     ./test.py <device_dataset>
-    `` `
+    ```
     >example: ./test.py htc
+
     ```
     ./gen_test.py <device_dataset> 
     ```
