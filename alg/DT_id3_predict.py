@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from sklearn.neighbors import KNeighborsClassifier
 import pickle
 from dbhelper import DB
 
