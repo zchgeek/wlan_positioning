@@ -1,37 +1,27 @@
 #!/usr/bin/env python
 from sklearn import tree
-import matplotlib.pyplot as plt
 import pickle
+import json
+from dbhelper import DB
+import sys
 
-F_SIZE = 0
-TRAIN_FILE = 'train_set.txt'
+device = sys.argv[1]
+db = DB('train.db')
+n_feature = int(db.queryone('value','manifest','key="n_feature"')[0])
 
-#data init
-for line in open('param.txt'):
-    attribute,value = line.strip().split('\t')
-    if attribute == 'feature_size':
-        F_SIZE = int(value)
-
-#prepare to train
 data = []
 cls = []
-for line in open(TRAIN_FILE):
-    try:
-        entry,y = line.strip().split('\t')
-    except:
-        continue
-    x = [0]*F_SIZE
-    for item in entry.split(' '):
-        index,level = item.split(':')
-        x[int(index)] = float(level)
+for y,entry in db.query(['p_id','entry'], 'rss_'+device):
+    dic = json.loads(entry)
+    x = [-100]*n_feature
+    for m_id,rss in dic.items():
+        x[int(m_id)] = float(rss)
     data.append(x)
     cls.append(y)
 
-#train model
 clf = tree.DecisionTreeClassifier()
 clf = clf.fit(data,cls)
 
-#save model
 fout = open('model.dat','w')
 pickle.dump(clf,fout)
 fout.close()
