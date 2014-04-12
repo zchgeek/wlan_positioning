@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <string name="app_name">Collector</string>
-    <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="wifi_enabled">wifi状态</string>
-	<string name="pt_selected">当前选中:pt0</string>
-</resources>
