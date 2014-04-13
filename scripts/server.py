@@ -1,38 +1,30 @@
 #!/usr/bin/env python
-
 import threading
 import Queue
 import socket
 import sys
-#import pickle
 import predictor
-#import hetero_calibrate as hetero
+import json
+import util
+from dbhelper import DB
 
 PORT_LOCAL = 5672
 PORT_CLIENT = 5674
 BUFSIZ = 4096
 IP = ""
-dic = {}
-#hetero_param = {}
+map_mac = {}
+map_pt = {}
+db = DB('train.db')
+
 def init():
-    for line in open('param.txt'):
-        attribute,value = line.strip().split('\t')
-        if attribute == 'ip':
-            IP = value
-    for line in open('features.txt'):
-        mac,index = line.strip().split('\t')
-        dic[mac] = index
-#    fin = open('fit.dat')
-#    hetero_param = pickle.load(fin)
-#    fin.close()
+    global map_mac,map_pt,IP
+    IP = util.get_ip('eth0')
+    map_mac = dict([(mac,m_id) for mac,m_id in db.query(['mac','m_id'],'map_mac')])
+    map_pt = dict([(p_id,pt) for p_id,pt in db.query(['p_id','pt'],'map_pt')])
 
 def transform(entry):
-    lst = []
-    for item in entry.strip().split(' '):
-        mac,level = item.rsplit(':',1)
-        if dic.has_key(mac):
-            lst.append(dic[mac]+':'+level)
-    return ' '.join(lst)
+    dic = json.loads(entry)
+    return dict([(map_mac[mac],rss) for mac,rss in dic.items()])
 
 def receiver(r_queue):
     ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,9 +35,7 @@ def receiver(r_queue):
         s,addr = ss.accept()
         ip = addr[0]
         entry = s.recv(BUFSIZ)
-        entry = transform(entry)
         data = ip+'\t'+entry
-        print data
         if r_queue.full():
             print 'error: r_queue is full'
             sys.exit()
@@ -64,19 +54,18 @@ def sender(s_queue):
 def processor(r_queue, s_queue):
     while True:
         data = r_queue.get()
-        print data.split('\t')
         ip,entry = data.split('\t')
+        dic = transform(entry)
         #process data
-        #entry = hetero.calibrate(entry,hetero_param)
-        result = predictor.predict(entry)
+        cls = predictor.predict(dic)
+        result = map_pt[cls]
         data = ip+'\t'+result
-        print data
         s_queue.put(data)
+        print 'from\t'+ip+'\t\tpredict\t'+result
 
 
 if __name__ == '__main__':
     init()
-
     r_queue = Queue.Queue(100)
     s_queue = Queue.Queue(100)
 
@@ -89,3 +78,5 @@ if __name__ == '__main__':
     thread_pcs.start()
     
     print '==service started=='
+    print 'ip:',IP
+

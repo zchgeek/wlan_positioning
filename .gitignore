@@ -1,1 +1,6 @@
 *~
+*.pyc
+*.db
+data
+phone_collector/bin/*
+phone_client/bin/*
